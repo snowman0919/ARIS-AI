@@ -2,6 +2,13 @@ import pytest
 
 from aris_planning.astar import CellCost, GridPlanner
 from aris_planning.pure_pursuit import Pose2D, PurePursuit
+from aris_planning.route import (
+    RouteWaypoint,
+    load_route_csv,
+    path_xy,
+    select_lookahead_waypoint,
+    write_route_csv,
+)
 
 
 def test_astar_finds_path_around_obstacle():
@@ -81,3 +88,53 @@ def test_ackermann_to_brake_is_clamped():
 
     assert ackermann_to_brake(0.5) == 0.0  # positive accel = no brake
     assert ackermann_to_brake(-2.0) == 1.0  # clamped to 1.0
+
+
+def test_route_csv_round_trip(tmp_path):
+    route_file = tmp_path / "route.csv"
+    route = [
+        RouteWaypoint(x=0.0, y=0.0, yaw=0.0, v_target=1.0),
+        RouteWaypoint(x=0.2, y=0.1, yaw=0.05, v_target=1.2),
+    ]
+
+    write_route_csv(route_file, route)
+
+    loaded = load_route_csv(route_file)
+    assert loaded == route
+    assert path_xy(loaded) == [(0.0, 0.0), (0.2, 0.1)]
+
+
+def test_route_csv_requires_v1_columns(tmp_path):
+    route_file = tmp_path / "bad_route.csv"
+    route_file.write_text("x,y,yaw\n0.0,0.0,0.0\n")
+
+    with pytest.raises(ValueError, match="v_target"):
+        load_route_csv(route_file)
+
+
+def test_route_selects_first_forward_lookahead_waypoint():
+    route = [
+        RouteWaypoint(x=-1.0, y=0.0, yaw=0.0, v_target=1.0),
+        RouteWaypoint(x=0.5, y=0.0, yaw=0.0, v_target=1.0),
+        RouteWaypoint(x=2.0, y=0.2, yaw=0.0, v_target=1.0),
+        RouteWaypoint(x=3.0, y=0.0, yaw=0.0, v_target=1.0),
+    ]
+
+    waypoint = select_lookahead_waypoint(
+        Pose2D(x=0.0, y=0.0, yaw=0.0), route, lookahead_m=1.5
+    )
+
+    assert waypoint == route[2]
+
+
+def test_route_selects_last_forward_when_no_point_reaches_lookahead():
+    route = [
+        RouteWaypoint(x=0.2, y=0.0, yaw=0.0, v_target=1.0),
+        RouteWaypoint(x=0.8, y=0.1, yaw=0.0, v_target=1.0),
+    ]
+
+    waypoint = select_lookahead_waypoint(
+        Pose2D(x=0.0, y=0.0, yaw=0.0), route, lookahead_m=2.0
+    )
+
+    assert waypoint == route[-1]

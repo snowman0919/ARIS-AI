@@ -1,3 +1,6 @@
+from glob import glob
+from os.path import join
+
 from setuptools import setup
 
 package_name = "aris_planning"
@@ -9,6 +12,7 @@ setup(
     data_files=[
         ("share/ament_index/resource_index/packages", [f"resource/{package_name}"]),
         (f"share/{package_name}", ["package.xml"]),
+        (join("share", package_name, "launch"), glob("launch/*.launch.py")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -20,6 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             "local_planner_node = aris_planning.local_planner_node:main",
+            "path_recorder_node = aris_planning.path_recorder_node:main",
         ],
     },
 )

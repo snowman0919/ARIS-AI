@@ -45,6 +45,14 @@ teleop-key:
 record:
     ./scripts/run_ros2.sh ros2 launch aris_bringup record.launch.py
 
+# V1 teach mode: record /odometry/filtered to $ARIS_DATA/routes/route.csv.
+path-record:
+    ./scripts/run_ros2.sh ros2 launch aris_planning path_recorder.launch.py
+
+# V1 repeat smoke: follow a synthetic route and check lateral error stays bounded.
+v1-smoke:
+    ./scripts/check_v1_route_repeat.sh
+
 rviz:
     ./scripts/run_rviz.sh
 

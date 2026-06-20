@@ -26,6 +26,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     use_sim = LaunchConfiguration("use_sim")
     mode = LaunchConfiguration("mode")
+    route_file = LaunchConfiguration("route_file")
     description_launch = str(
         Path(get_package_share_directory("aris_description")) / "launch" / "description.launch.py"
     )
@@ -44,6 +45,11 @@ def generate_launch_description():
                 "mode",
                 default_value="teleop",
                 description="teleop = manual /cmd_vel->/cmd_drive; auto = autonomous planner",
+            ),
+            DeclareLaunchArgument(
+                "route_file",
+                default_value="",
+                description="V1 route CSV for auto mode. Empty keeps the demo path.",
             ),
             # Shared vehicle model + base_link->sensor TFs (sim and real identical).
             IncludeLaunchDescription(
@@ -92,6 +98,7 @@ def generate_launch_description():
                 executable="local_planner_node",
                 output="screen",
                 condition=is_auto,
+                parameters=[{"route_file": route_file}],
             ),
         ]
     )

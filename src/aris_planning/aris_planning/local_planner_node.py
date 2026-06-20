@@ -19,6 +19,7 @@ from std_msgs.msg import Bool
 
 from .cmd_drive import local_plan_to_ackermann
 from .pure_pursuit import Pose2D, PurePursuit
+from .route import load_route_csv, path_xy, resolve_route_file
 
 
 def yaw_from_odom(msg: Odometry) -> float:
@@ -35,6 +36,7 @@ class LocalPlannerNode(Node):
         self.declare_parameter("lookahead_m", 2.0)
         self.declare_parameter("max_speed_mps", 1.8)
         self.declare_parameter("goal_tolerance_m", 0.8)
+        self.declare_parameter("route_file", "")
         self.planner = PurePursuit(
             wheelbase_m=float(self.get_parameter("wheelbase_m").value),
             lookahead_m=float(self.get_parameter("lookahead_m").value),
@@ -42,8 +44,18 @@ class LocalPlannerNode(Node):
         )
         self.goal_tolerance_m = float(self.get_parameter("goal_tolerance_m").value)
         self.estop = False
-        # Placeholder demo path until V4 feeds /global_path from the global planner.
-        self.path = [(float(x), 1.2 * math.sin(float(x) / 4.0)) for x in range(2, 31)]
+        route_file = str(self.get_parameter("route_file").value)
+        if route_file.strip():
+            route_path = resolve_route_file(route_file)
+            route = load_route_csv(route_path)
+            self.path = path_xy(route)
+            self.get_logger().info(
+                f"Loaded V1 route with {len(self.path)} waypoints from {route_path}"
+            )
+        else:
+            # Placeholder demo path until V1/V4 feeds a route/global path.
+            self.path = [(float(x), 1.2 * math.sin(float(x) / 4.0)) for x in range(2, 31)]
+            self.get_logger().info("No route_file set; using placeholder sine demo path.")
 
         self.cmd_pub = self.create_publisher(AckermannDriveStamped, "/cmd_drive", 10)
         self.path_pub = self.create_publisher(PoseArray, "/aris/planned_path", 10)
