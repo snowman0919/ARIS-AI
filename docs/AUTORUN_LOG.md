@@ -44,3 +44,42 @@ Entry format:
 - Next:         Start V2 by assessing whether Gazebo Harmonic / `ros_gz` / `gpu_lidar` are
   available in the Nix+Docker ROS environment; if unavailable or headless GPU rendering blocks
   `/scan_cloud`, document honestly and add only safe, tested scaffold.
+
+## 2026-06-21 02:16 KST — V2: LiDAR Localization — WIP/BLOCKED
+- Built:        Added a buildable `aris_localization` package with ROS-free
+  `localization_core.py` transform/error helpers and tests; added `v2_gazebo_lidar.launch.py`,
+  a local `aris_lidar_smoke.sdf` world, `just v2-lidar-smoke`, and a guarded `use_sim` gpu_lidar
+  block in the single shared ARIS URDF that targets `/scan_cloud`.
+- Verified:     `gz`, `ros_gz`, `robot_localization`, `slam_toolbox`, and PCL packages are present
+  in the ROS container. Headless server-only Gazebo can stay alive with an empty/world file, but
+  `nix develop -c just v2-lidar-smoke` fails honestly: no `/scan_cloud` PointCloud2 sample; launch
+  log shows `ros_gz_sim create` waiting for `/world/aris_lidar_smoke/create`, then the smoke times
+  out and reports `/scan_cloud` has no type/publisher.
+- Build/tests:  `nix develop -c just ros2-build` green (8 packages); `python3 -m pytest src -q`
+  inside the ROS container green (`29 passed`); `nix develop -c just auto-sim` green, so V0/V1
+  stack behavior still launches after the URDF sensor guard. `nix develop -c just v2-lidar-smoke`
+  fails with exit code 1 by design because the completion-critical `/scan_cloud` sample is absent.
+- Commit:       `ff118bc` — `V2: scaffold lidar localization probe (blocked: no scan cloud)`.
+- Stubbed/blocked: V2 is not complete. No Gazebo-spawned URDF, no `/scan_cloud`, no SLAM `.pcd`,
+  no NDT scan matching, no EKF-owned `/odometry/filtered`, and no real `map→odom`. The concrete
+  blocker is Gazebo/ros_gz headless service/sensor activation: the world create service is not
+  discoverable by `ros_gz_sim create`, and therefore the gpu_lidar cannot be verified.
+- Next:         Fix the Gazebo headless transport/rendering path first: make
+  `/world/aris_lidar_smoke/create` discoverable, spawn the shared URDF, and get one real
+  PointCloud2 sample on `/scan_cloud`. Only after that should V2 proceed to SLAM map generation,
+  NDT/EKF localization ownership of `/odometry/filtered` and `map→odom`, and the ≤5 cm drift gate.
+
+## 2026-06-21 02:16 KST — SUMMARY
+- Truly done: V1 teach-and-repeat. Criteria passed with an automated recorded teleop route
+  (36 waypoints, 7.499 m) replayed at `max_lateral_error=0.000 m < 0.3 m`; commit `c4d2897`.
+- WIP/blocked: V2 LiDAR localization. Scaffold and tests exist; completion criteria are not met
+  because Gazebo/ros_gz does not yet spawn the URDF or publish `/scan_cloud` in this headless run;
+  commit `ff118bc`.
+- Not attempted: V3-V6. They depend on V2’s real localization and sensor streams, so forward
+  progress stopped per the honesty gate instead of skipping dependencies.
+- Current state: `nix develop -c just ros2-build` green (8 packages), ROS-free/unit suite green
+  (`29 passed`), `nix develop -c just auto-sim` green, `nix develop -c just v2-lidar-smoke`
+  correctly fails with the documented V2 blocker.
+- Exact next step: debug Gazebo/ros_gz service discovery and headless gpu_lidar rendering until
+  `just v2-lidar-smoke` produces one `/scan_cloud` PointCloud2 sample, then implement the real
+  V2 localization chain and rerun V1 repeat on the new `/odometry/filtered`.
