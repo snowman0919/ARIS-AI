@@ -55,11 +55,36 @@
   <xacro:sensor_frame name="camera_right_link" xyz="0.2 -0.5 0.7"  rpy="0 0 -1.571"/>
   <xacro:sensor_frame name="camera_rear_link"  xyz="-0.4 0 0.7"    rpy="0 0 3.142"/>
 
-  <!--
-    Simulation-only sensor plugins (gpu_lidar publishing /scan_cloud, the six
-    cameras) get injected under <xacro:if value="$(arg use_sim)"> here. Deferred
-    until V2/V3 need those streams; the current world has no sensors. The real
-    vehicle uses hardware drivers, so this block never affects it.
-  -->
+  <xacro:if value="$(arg use_sim)">
+    <gazebo reference="lidar_link">
+      <sensor name="gpu_lidar" type="gpu_lidar">
+        <topic>scan_cloud</topic>
+        <update_rate>10</update_rate>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>640</samples>
+              <resolution>1</resolution>
+              <min_angle>-1.396263</min_angle>
+              <max_angle>1.396263</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>16</samples>
+              <resolution>1</resolution>
+              <min_angle>-0.261799</min_angle>
+              <max_angle>0.261799</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.08</min>
+            <max>10.0</max>
+            <resolution>0.01</resolution>
+          </range>
+        </lidar>
+        <always_on>1</always_on>
+        <visualize>false</visualize>
+      </sensor>
+    </gazebo>
+  </xacro:if>
 
 </robot>

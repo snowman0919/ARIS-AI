@@ -53,6 +53,10 @@ path-record:
 v1-smoke:
     ./scripts/check_v1_route_repeat.sh
 
+# V2 probe: headless Gazebo + URDF spawn + gpu_lidar bridge to /scan_cloud.
+v2-lidar-smoke:
+    ./scripts/check_v2_gazebo_lidar.sh
+
 rviz:
     ./scripts/run_rviz.sh
 

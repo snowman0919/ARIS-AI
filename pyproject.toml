@@ -1,6 +1,7 @@
 [tool.pytest.ini_options]
 pythonpath = [
   "src/aris_mcu_bridge",
+  "src/aris_localization",
   "src/aris_planning",
   "src/aris_vehicle_sim",
   "src/aris_ai_semantics",
