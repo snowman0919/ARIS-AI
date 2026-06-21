@@ -123,3 +123,40 @@ Entry format:
 - Next:         Add controlled odometry drift/noise in sim and expand V2A into a real correction
   test: LiDAR scan matching should recover from drift, keep `map→odom` stable, and let V1 repeat
   pass using localization-owned `/odometry/filtered`.
+
+## 2026-06-21 18:16 KST — V2A: LiDAR Drift-Recovery Gate — WIP
+- Built:        Added controlled wheel-odometry drift injection to `vehicle_sim_node`, optional
+  `/aris/sim/ground_truth` publication for bounded sim-only measurement, configurable LiDAR
+  `pose_topic`, `v2a_drift_recovery.launch.py`, and `just v2a-drift-smoke`.
+- Verified:     `nix develop -c just v2a-drift-smoke` green: the vehicle drove to `max_x=5.547 m`;
+  injected wheel-odom error reached `max_wheel_error=0.125 m` (>= 0.08 m), while LiDAR-owned
+  `/odometry/filtered` stayed at `max_filtered_error=0.047 m` (<= 0.05 m), with
+  `max_yaw_error=0.000 rad` and `max_dt=0.041 s`. Sequential regressions also passed:
+  `just lidar-sim-smoke` (`/scan_cloud` PointCloud2 `height=1`, `width=864`, `point_step=24`),
+  `just v2a-localization-smoke` (`max_x=6.527 m`, `max_position_error=0.040 m`), and
+  `just auto-sim`.
+- Build/tests:  `nix develop -c just ros2-build` green (8 packages);
+  `python3 -m pytest src -q` inside the ROS container green (`34 passed`).
+- Commit:       `f2c9da0` — `V2A: verify lidar drift recovery`.
+- Stubbed/blocked: This is still V2A WIP, not full V2. It proves known-map scan matching can
+  correct controlled lateral wheel-odom drift in the lightweight simulator, but it is not yet SLAM
+  map generation, NDT/EKF fusion, Gazebo gpu_lidar validation, or real LiDAR-driver validation.
+  Gazebo gpu_lidar remains blocked by the previously documented headless `ros_gz_sim create` /
+  `/scan_cloud` issue.
+- Next:         Harden this into the next V2 increment: add a repeat-route smoke that uses
+  localization-owned `/odometry/filtered` under drift, then decide whether to implement a small
+  EKF/fusion scaffold or continue Gazebo gpu_lidar debugging before moving to V3 perception.
+
+## 2026-06-21 18:16 KST — SUMMARY
+- Truly passed: V1 teach-and-repeat (`max_lateral_error=0.000 m < 0.3 m`) and V2A lightweight
+  LiDAR localization ownership/drift recovery (`max_wheel_error=0.125 m` corrected to
+  `max_filtered_error=0.047 m`).
+- WIP/blocked: Full V2 remains incomplete because Gazebo gpu_lidar still does not publish a
+  verified `/scan_cloud`; SLAM `.pcd`, NDT/EKF, and real-sensor validation are not done. V3-V6
+  remain blocked by full V2 completion under the honesty gate.
+- Current build/test state: `nix develop -c just ros2-build` green; ROS-free unit suite green
+  (`34 passed`); `just auto-sim`, `just lidar-sim-smoke`, `just v2a-localization-smoke`, and
+  `just v2a-drift-smoke` all green when run sequentially.
+- Exact next step: implement a V2A repeat-route drift smoke so the V1 route follower is exercised
+  against localization-owned `/odometry/filtered` while wheel odometry drifts; after that, either
+  add minimal EKF/fusion scaffolding or return to Gazebo gpu_lidar service/rendering debugging.
