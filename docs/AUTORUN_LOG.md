@@ -83,3 +83,21 @@ Entry format:
 - Exact next step: debug Gazebo/ros_gz service discovery and headless gpu_lidar rendering until
   `just v2-lidar-smoke` produces one `/scan_cloud` PointCloud2 sample, then implement the real
   V2 localization chain and rerun V1 repeat on the new `/odometry/filtered`.
+
+## 2026-06-21 17:50 KST — V2: Spec-Driven 3D LiDAR Surrogate — WIP
+- Built:        Added `aris_vehicle_sim.lidar_sim_core` ROS-free 3D ray-casting core,
+  `lidar_sim_node`, LiDAR profile YAML, 3D box-map YAML, `lidar_sim.launch.py`, and
+  `just lidar-sim-smoke`. The PointCloud2 schema includes `x,y,z,intensity,ring,time` and uses
+  `/scan_cloud` with `frame_id=lidar_link`, matching the real-sensor handoff contract.
+- Verified:     `nix develop -c just lidar-sim-smoke` green: pure sim + LiDAR node published one
+  `/scan_cloud` sample with `height=1`, `width=866`, `point_step=24`, and fields present.
+- Build/tests:  `nix develop -c just ros2-build` green (8 packages);
+  `python3 -m pytest src -q` green (`33 passed`); `nix develop -c just auto-sim` green.
+- Commit:       `44b3d5d` — `V2: add spec-driven 3D lidar simulator`.
+- Stubbed/blocked: This is not a real LiDAR driver and not full V2 localization. The default
+  LiDAR profile is explicitly a configurable stand-in until the production LiDAR datasheet values
+  are copied into YAML. Gazebo gpu_lidar remains blocked separately, but V2/V3 algorithm work no
+  longer has to wait for Gazebo to publish `/scan_cloud`.
+- Next:         Implement V2A localization on top of this `/scan_cloud` path: occupancy map /
+  known-map scan matching, `map→odom` ownership, and `/odometry/filtered` publication, then rerun
+  V1 repeat using the localization-owned pose.
