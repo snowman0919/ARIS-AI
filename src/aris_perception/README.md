@@ -1,5 +1,7 @@
 # aris_perception
 
-Perception package placeholder for Unitree L2 4D LiDAR and six synchronized USB cameras.
+Simulation-only V3 perception scaffold.
 
-Default development should use recorded or simulated data. Hardware capture requires the `hardware` profile and explicit device mapping.
+No camera streams or segmentation model are available yet, so this package does not claim V3
+completion. It currently contains ROS-free helpers for turning a segmentation detection plus camera
+calibration/pose into a semantic map observation that `aris_mapping` can consume.
