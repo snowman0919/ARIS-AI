@@ -196,3 +196,38 @@ Entry format:
 - Exact next step: add a small tested fusion/localization manager layer that can reject bad LiDAR
   corrections and document the remaining gap to production V2; then decide whether to spend the
   next block on Gazebo gpu_lidar debugging or move to simulation-only V3 perception scaffolding.
+
+## 2026-06-21 18:27 KST — V2A: LiDAR Correction Acceptance Gate — WIP
+- Built:        Added ROS-free `aris_localization.fusion_gate` with correction accept/reject
+  decisions for point count, scan-map mean error, translation jump, and yaw jump. Wired
+  `lidar_localization_node` to publish the accepted scan-match pose or fall back to wheel odom for
+  rejected updates. Also hardened the drift/route smoke metric matching with timestamp
+  interpolation instead of nearest-sample-only comparisons.
+- Verified:     `nix develop -c just v2a-drift-smoke` green after the gate:
+  `max_x=9.527 m`, `max_wheel_error=0.191 m`, `max_filtered_error=0.025 m`,
+  `max_yaw_error=0.000 rad`. `nix develop -c just v2a-route-smoke` green:
+  `max_x=9.105 m`, `max_lateral_error=0.105 m` (< 0.3 m),
+  `max_wheel_error=0.182 m`, `max_filtered_error=0.026 m`.
+- Build/tests:  `nix develop -c just ros2-build` green (8 packages);
+  `python3 -m pytest src -q` green (`36 passed`); `nix develop -c just auto-sim` green.
+- Commit:       `4cc1d96` — `V2A: gate lidar correction updates`.
+- Stubbed/blocked: This is not a production EKF. It is a deterministic safety gate around the
+  current known-map scan matcher. Full V2 still needs SLAM/NDT/EKF selection or integration,
+  Gazebo gpu_lidar repair, and validation against the actual LiDAR driver/profile.
+- Next:         Start the V3 simulation-only perception scaffold only if it is explicitly marked as
+  simulation/WIP and consumes the existing `/scan_cloud` contract; otherwise spend the next block
+  on full V2 Gazebo gpu_lidar or EKF/NDT work.
+
+## 2026-06-21 18:27 KST — SUMMARY
+- Truly passed: V1; V2A LiDAR surrogate; V2A localization ownership; V2A drift recovery; V2A
+  route-repeat under drift; V2A correction acceptance gate with ROS-free tests.
+- WIP/blocked: Full V2 is still not complete. The Gazebo gpu_lidar path remains blocked; SLAM map
+  generation, NDT/EKF production localization, and real LiDAR validation are still outstanding.
+  V3-V6 remain dependent on that decision unless developed as clearly labelled simulation-only
+  scaffolds.
+- Current build/test state: `nix develop -c just ros2-build` green; unit suite green
+  (`36 passed`); `just auto-sim`, `just v2a-drift-smoke`, and `just v2a-route-smoke` green after
+  the correction gate changes.
+- Exact next step: either repair the Gazebo `/scan_cloud` path for full V2, or begin a
+  simulation-only V3 perception scaffold that subscribes to `/scan_cloud` and is documented as WIP
+  until full V2 sensor/localization validation exists.
