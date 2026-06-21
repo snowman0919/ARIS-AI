@@ -6,10 +6,12 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
     route_file = LaunchConfiguration("route_file")
+    use_demo_graph = LaunchConfiguration("use_demo_graph")
     description_launch = str(
         Path(get_package_share_directory("aris_description")) / "launch" / "description.launch.py"
     )
@@ -17,8 +19,13 @@ def generate_launch_description():
         [
             DeclareLaunchArgument(
                 "route_file",
-                default_value="",
+                default_value="__demo__",
                 description="Optional recorded V1 route CSV to convert into the V4 route graph.",
+            ),
+            DeclareLaunchArgument(
+                "use_demo_graph",
+                default_value="true",
+                description="true = built-in semantic demo graph; false = route_file CSV graph.",
             ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(description_launch),
@@ -66,6 +73,7 @@ def generate_launch_description():
                         "goal_y_m": 0.0,
                         "semantic_weight": 10.0,
                         "route_file": route_file,
+                        "use_demo_graph": ParameterValue(use_demo_graph, value_type=bool),
                     }
                 ],
             ),

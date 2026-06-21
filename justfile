@@ -85,9 +85,17 @@ v4-goal-smoke:
 v4-teach route="manual_v4_route.csv":
     ./scripts/manual_v4_teach.sh "{{route}}"
 
+# Interactive V4 demo with RViz, step 1: draw and see the recorded path live.
+v4-teach-rviz route="manual_v4_route.csv":
+    ./scripts/manual_v4_teach_rviz.sh "{{route}}"
+
 # Interactive V4 demo, step 2: follow the recorded route through V4 global planning.
 v4-follow route="manual_v4_route.csv":
     ./scripts/manual_v4_follow.sh "{{route}}"
+
+# Interactive V4 demo with RViz, step 2: follow while visualizing map, paths, LiDAR, and TF.
+v4-follow-rviz route="manual_v4_route.csv":
+    ./scripts/manual_v4_follow_rviz.sh "{{route}}"
 
 rviz:
     ./scripts/run_rviz.sh

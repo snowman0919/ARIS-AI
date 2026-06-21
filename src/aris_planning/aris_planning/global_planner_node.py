@@ -26,13 +26,15 @@ class GlobalPlannerNode(Node):
         self.declare_parameter("semantic_weight", 10.0)
         self.declare_parameter("path_spacing_m", 0.25)
         self.declare_parameter("route_file", "")
+        self.declare_parameter("use_demo_graph", True)
         self.goal_x = float(self.get_parameter("goal_x_m").value)
         self.goal_y = float(self.get_parameter("goal_y_m").value)
         self.semantic_weight = float(self.get_parameter("semantic_weight").value)
         self.path_spacing_m = float(self.get_parameter("path_spacing_m").value)
         route_file = str(self.get_parameter("route_file").value).strip()
+        use_demo_graph = bool(self.get_parameter("use_demo_graph").value)
         self.pose: tuple[float, float, float] | None = None
-        if route_file:
+        if not use_demo_graph and route_file and route_file != "__demo__":
             route_path = resolve_route_file(route_file)
             self.hd_map = _route_file_graph(route_path)
             self.goal_node = f"wp_{len(self.hd_map.route_nodes) - 1}"

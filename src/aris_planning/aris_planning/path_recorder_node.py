@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 
 import rclpy
+from geometry_msgs.msg import Pose, PoseArray
 from nav_msgs.msg import Odometry
 from rclpy.node import Node
 
@@ -37,9 +38,12 @@ class PathRecorderNode(Node):
         self.v_target_mps = float(self.get_parameter("v_target_mps").value)
         self.last_xy: tuple[float, float] | None = None
         self.count = 0
+        self.recorded_points: list[tuple[float, float]] = []
 
         self._prepare_route_file(self.route_file)
+        self.path_pub = self.create_publisher(PoseArray, "/aris/recorded_path", 10)
         self.create_subscription(Odometry, "/odometry/filtered", self._on_odom, 20)
+        self.create_timer(0.5, self._publish_recorded_path)
         self.get_logger().info(
             f"Recording /odometry/filtered to {self.route_file} every {self.spacing_m:.2f} m"
         )
@@ -74,9 +78,21 @@ class PathRecorderNode(Node):
             )
 
         self.last_xy = (x, y)
+        self.recorded_points.append((x, y))
         self.count += 1
         if self.count == 1 or self.count % 25 == 0:
             self.get_logger().info(f"Recorded {self.count} waypoints to {self.route_file}")
+
+    def _publish_recorded_path(self) -> None:
+        path = PoseArray()
+        path.header.frame_id = "map"
+        path.header.stamp = self.get_clock().now().to_msg()
+        for x, y in self.recorded_points:
+            pose = Pose()
+            pose.position.x = x
+            pose.position.y = y
+            path.poses.append(pose)
+        self.path_pub.publish(path)
 
 
 def main() -> None:

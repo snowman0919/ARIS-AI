@@ -4,6 +4,7 @@ set -euo pipefail
 # shellcheck source=lib.sh
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 aris_load_env
+export ROS_DOMAIN_ID="${ARIS_V4_SMOKE_ROS_DOMAIN_ID:-142}"
 
 aris_compose run --rm aris-ros2-dev bash -lc '
   set -euo pipefail
