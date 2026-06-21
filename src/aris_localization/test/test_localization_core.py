@@ -10,6 +10,20 @@ from aris_localization.localization_core import (
     point_to_polyline_distance,
     transform_pose,
 )
+from aris_localization.scan_matching import (
+    BoxMapObject,
+    LidarExtrinsic2D,
+    ScanMatchConfig,
+    match_scan_to_map,
+    scan_map_mean_error,
+)
+from aris_vehicle_sim.lidar_sim_core import (
+    BoxObstacle,
+    LidarProfile,
+    Pose3D,
+    pose_lidar_from_base,
+    simulate_lidar_frame,
+)
 
 
 def assert_pose_close(actual: Pose2D, expected: Pose2D) -> None:
@@ -46,3 +60,52 @@ def test_point_to_polyline_distance_uses_nearest_segment():
 def test_point_to_polyline_distance_rejects_degenerate_route():
     with pytest.raises(ValueError, match="at least two"):
         point_to_polyline_distance((0.0, 0.0), [(0.0, 0.0)])
+
+
+def test_known_map_scan_matching_corrects_lateral_and_yaw_error():
+    known_map = [
+        BoxMapObject(center=(5.0, 0.0, 0.0), size=(1.0, 4.0, 3.0), label="front_wall"),
+        BoxMapObject(center=(2.5, 2.0, 0.0), size=(5.0, 0.3, 3.0), label="left_wall"),
+        BoxMapObject(center=(2.5, -2.0, 0.0), size=(5.0, 0.3, 3.0), label="right_wall"),
+    ]
+    sim_world = [
+        BoxObstacle(center=box.center, size=box.size, label=box.label)
+        for box in known_map
+    ]
+    profile = LidarProfile(
+        model="test",
+        horizontal_fov_deg=100.0,
+        horizontal_samples=101,
+        vertical_angles_deg=(-5.0, 0.0, 5.0),
+        scan_rate_hz=10.0,
+        range_min_m=0.1,
+        range_max_m=20.0,
+    )
+    extrinsic = LidarExtrinsic2D(x=0.6)
+    true_pose = Pose2D(x=0.0, y=0.0, yaw=0.0)
+    lidar_pose = pose_lidar_from_base(
+        Pose3D(true_pose.x, true_pose.y, 0.0, yaw=true_pose.yaw),
+        Pose3D(extrinsic.x, extrinsic.y, 0.0, yaw=extrinsic.yaw),
+    )
+    returns = simulate_lidar_frame(lidar_pose, profile, sim_world)
+    points = [(point.x, point.y, point.z) for point in returns]
+    odom_guess = Pose2D(x=0.0, y=0.12, yaw=0.04)
+
+    result = match_scan_to_map(
+        points,
+        odom_guess,
+        known_map,
+        extrinsic,
+        ScanMatchConfig(
+            xy_window_m=0.20,
+            xy_step_m=0.04,
+            yaw_window_rad=0.08,
+            yaw_step_rad=0.02,
+            prior_weight=0.0,
+            min_improvement_m=0.0,
+        ),
+    )
+
+    assert result.pose.y == pytest.approx(0.0, abs=0.04)
+    assert result.pose.yaw == pytest.approx(0.0, abs=0.03)
+    assert result.mean_error_m < scan_map_mean_error(points, odom_guess, known_map, extrinsic, 1.0)

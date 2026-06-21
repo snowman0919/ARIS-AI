@@ -59,6 +59,7 @@ class LidarSimNode(Node):
         )
         self.rng = random.Random(int(self.get_parameter("random_seed").value))
         self.base_pose: Pose3D | None = None
+        self.base_stamp = None
 
         self.cloud_pub = self.create_publisher(PointCloud2, "/scan_cloud", 10)
         self.create_subscription(Odometry, "/wheel_odom", self._on_odom, 20)
@@ -75,17 +76,18 @@ class LidarSimNode(Node):
             z=float(msg.pose.pose.position.z),
             yaw=yaw_from_odom(msg),
         )
+        self.base_stamp = msg.header.stamp
 
     def _publish_scan(self) -> None:
-        if self.base_pose is None:
+        if self.base_pose is None or self.base_stamp is None:
             return
         lidar_pose = pose_lidar_from_base(self.base_pose, self.lidar_extrinsic)
         returns = simulate_lidar_frame(lidar_pose, self.profile, self.world, rng=self.rng)
-        self.cloud_pub.publish(self._to_pointcloud2(returns))
+        self.cloud_pub.publish(self._to_pointcloud2(returns, self.base_stamp))
 
-    def _to_pointcloud2(self, returns: list[LidarReturn]) -> PointCloud2:
+    def _to_pointcloud2(self, returns: list[LidarReturn], stamp) -> PointCloud2:
         msg = PointCloud2()
-        msg.header.stamp = self.get_clock().now().to_msg()
+        msg.header.stamp = stamp
         msg.header.frame_id = "lidar_link"
         msg.height = 1
         msg.width = len(returns)

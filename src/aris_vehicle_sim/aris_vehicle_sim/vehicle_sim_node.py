@@ -39,11 +39,13 @@ class VehicleSimNode(Node):
         self.declare_parameter("wheelbase_m", 1.25)
         self.declare_parameter("max_steer_rad", 0.6)
         self.declare_parameter("command_timeout_s", 0.5)
+        self.declare_parameter("publish_filtered_odom", True)
         self.wheelbase_m = float(self.get_parameter("wheelbase_m").value)
         self.max_steer = float(self.get_parameter("max_steer_rad").value)
         self.command_timeout = Duration(
             seconds=float(self.get_parameter("command_timeout_s").value)
         )
+        self.publish_filtered_odom = bool(self.get_parameter("publish_filtered_odom").value)
 
         self.model = KinematicBicycleModel(wheelbase_m=self.wheelbase_m)
         self.state = VehicleState()
@@ -54,7 +56,11 @@ class VehicleSimNode(Node):
         self.last_time = self.get_clock().now()
 
         self.wheel_odom_pub = self.create_publisher(Odometry, "/wheel_odom", 10)
-        self.filtered_pub = self.create_publisher(Odometry, "/odometry/filtered", 10)
+        self.filtered_pub = (
+            self.create_publisher(Odometry, "/odometry/filtered", 10)
+            if self.publish_filtered_odom
+            else None
+        )
         self.tf_broadcaster = TransformBroadcaster(self)
         self.create_subscription(AckermannDriveStamped, "/cmd_drive", self._on_cmd_drive, 10)
         self.create_subscription(Bool, "/estop", self._on_estop, 10)
@@ -117,14 +123,15 @@ class VehicleSimNode(Node):
         tf.transform.rotation = orientation
         self.tf_broadcaster.sendTransform(tf)
 
-        # V1 placeholder for the EKF output (see module docstring).
-        filtered = Odometry()
-        filtered.header.stamp = stamp
-        filtered.header.frame_id = "map"
-        filtered.child_frame_id = "base_link"
-        filtered.pose.pose = odom.pose.pose
-        filtered.twist.twist = odom.twist.twist
-        self.filtered_pub.publish(filtered)
+        if self.filtered_pub is not None:
+            # V1 placeholder for the EKF output (see module docstring).
+            filtered = Odometry()
+            filtered.header.stamp = stamp
+            filtered.header.frame_id = "map"
+            filtered.child_frame_id = "base_link"
+            filtered.pose.pose = odom.pose.pose
+            filtered.twist.twist = odom.twist.twist
+            self.filtered_pub.publish(filtered)
 
 
 def main() -> None:

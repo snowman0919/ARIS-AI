@@ -28,3 +28,15 @@ nix develop -c just lidar-sim-smoke
 
 This does not complete V2 localization by itself. It unblocks algorithm development by giving V2/V3
 the same topic/type contract that the real LiDAR driver will later provide.
+
+V2A now adds a conservative LiDAR-localization ownership path:
+
+```bash
+nix develop -c just v2a-localization-smoke
+```
+
+The V2A launch disables the simulator's V1 `/odometry/filtered` placeholder, runs the LiDAR
+surrogate, and starts `lidar_localization_node`, which publishes `/odometry/filtered` and
+`map->odom`. In the current no-drift lightweight sim, the launch uses conservative correction
+windows while the ROS-free scan-matching core remains tested separately with an offset correction
+case.

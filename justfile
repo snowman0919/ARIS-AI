@@ -61,6 +61,10 @@ v2-lidar-smoke:
 lidar-sim-smoke:
     ./scripts/check_lidar_sim.sh
 
+# V2A: LiDAR surrogate + known-map scan matching owns /odometry/filtered and map->odom.
+v2a-localization-smoke:
+    ./scripts/check_v2a_localization.sh
+
 rviz:
     ./scripts/run_rviz.sh
 

@@ -22,4 +22,9 @@ setup(
     description="V2 localization scaffolding for ARIS.",
     license="Apache-2.0",
     tests_require=["pytest"],
+    entry_points={
+        "console_scripts": [
+            "lidar_localization_node = aris_localization.lidar_localization_node:main",
+        ],
+    },
 )
