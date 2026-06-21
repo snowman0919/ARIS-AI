@@ -18,3 +18,13 @@ V2 adds:
 
 Current blocker: in the headless container, the Gazebo world create service is not discoverable by
 `ros_gz_sim create`, so the scaffold cannot yet spawn the URDF or produce `/scan_cloud`.
+
+Mitigation path now available: `aris_vehicle_sim` provides a spec-driven 3D LiDAR surrogate that
+publishes `/scan_cloud` as `sensor_msgs/PointCloud2` from a YAML LiDAR profile and 3D box map:
+
+```bash
+nix develop -c just lidar-sim-smoke
+```
+
+This does not complete V2 localization by itself. It unblocks algorithm development by giving V2/V3
+the same topic/type contract that the real LiDAR driver will later provide.

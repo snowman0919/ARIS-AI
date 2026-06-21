@@ -1,3 +1,6 @@
+from glob import glob
+from os.path import join
+
 from setuptools import setup
 
 package_name = "aris_vehicle_sim"
@@ -17,9 +20,12 @@ setup(
                 "launch/autonomous_rviz.launch.py",
                 "launch/rviz.launch.py",
                 "launch/gazebo.launch.py",
+                "launch/lidar_sim.launch.py",
             ],
         ),
         (f"share/{package_name}/rviz", ["rviz/autonomous_sim.rviz"]),
+        (join("share", package_name, "config"), glob("config/*.yaml")),
+        (join("share", package_name, "maps"), glob("maps/*.yaml")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -31,6 +37,7 @@ setup(
     entry_points={
         "console_scripts": [
             "vehicle_sim_node = aris_vehicle_sim.vehicle_sim_node:main",
+            "lidar_sim_node = aris_vehicle_sim.lidar_sim_node:main",
         ],
     },
 )
