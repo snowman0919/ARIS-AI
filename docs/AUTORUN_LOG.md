@@ -101,3 +101,25 @@ Entry format:
 - Next:         Implement V2A localization on top of this `/scan_cloud` path: occupancy map /
   known-map scan matching, `map→odom` ownership, and `/odometry/filtered` publication, then rerun
   V1 repeat using the localization-owned pose.
+
+## 2026-06-21 18:07 KST — V2A: LiDAR Localization Ownership Path — WIP
+- Built:        Added ROS-free `aris_localization.scan_matching` known-box-map scan matcher,
+  `lidar_localization_node`, `v2a_lidar_localization.launch.py`, and
+  `just v2a-localization-smoke`. Added a `vehicle_sim_node.publish_filtered_odom` parameter so
+  V2A can disable the V1 placeholder and let localization own `/odometry/filtered`; localization
+  also broadcasts `map→odom`.
+- Verified:     `nix develop -c just v2a-localization-smoke` green: pure sim + LiDAR surrogate +
+  localization produced localization-owned `/odometry/filtered` while the vehicle drove to
+  `max_x=6.507 m`; timestamp-aligned `max_position_error=0.040 m` (< 0.05 m),
+  `max_yaw_error=0.000 rad`, `max_dt=0.040 s`.
+- Build/tests:  `nix develop -c just ros2-build` green (8 packages);
+  `python3 -m pytest src -q` green (`34 passed`); `nix develop -c just auto-sim` green, so
+  existing V0/V1 launch behavior remains intact.
+- Commit:       `da905a0` — `V2A: add lidar localization ownership path`.
+- Stubbed/blocked: This is still V2A, not full V2. The launch uses conservative correction windows
+  in the no-drift lightweight sim; the scan-matching core is tested with an offset correction case,
+  but there is not yet a drift-injected closed-loop localization test, SLAM map build, NDT, EKF, or
+  Gazebo/real LiDAR validation.
+- Next:         Add controlled odometry drift/noise in sim and expand V2A into a real correction
+  test: LiDAR scan matching should recover from drift, keep `map→odom` stable, and let V1 repeat
+  pass using localization-owned `/odometry/filtered`.
