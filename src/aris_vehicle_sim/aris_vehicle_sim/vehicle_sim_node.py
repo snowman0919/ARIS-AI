@@ -40,15 +40,24 @@ class VehicleSimNode(Node):
         self.declare_parameter("max_steer_rad", 0.6)
         self.declare_parameter("command_timeout_s", 0.5)
         self.declare_parameter("publish_filtered_odom", True)
+        self.declare_parameter("publish_ground_truth", False)
+        self.declare_parameter("wheel_odom_lateral_drift_per_m", 0.0)
+        self.declare_parameter("wheel_odom_yaw_drift_per_m", 0.0)
         self.wheelbase_m = float(self.get_parameter("wheelbase_m").value)
         self.max_steer = float(self.get_parameter("max_steer_rad").value)
         self.command_timeout = Duration(
             seconds=float(self.get_parameter("command_timeout_s").value)
         )
         self.publish_filtered_odom = bool(self.get_parameter("publish_filtered_odom").value)
+        self.publish_ground_truth = bool(self.get_parameter("publish_ground_truth").value)
+        self.lateral_drift_per_m = float(
+            self.get_parameter("wheel_odom_lateral_drift_per_m").value
+        )
+        self.yaw_drift_per_m = float(self.get_parameter("wheel_odom_yaw_drift_per_m").value)
 
         self.model = KinematicBicycleModel(wheelbase_m=self.wheelbase_m)
         self.state = VehicleState()
+        self.distance_traveled_m = 0.0
         self.estop = False
         self.target_velocity = 0.0
         self.target_steering = 0.0
@@ -56,6 +65,11 @@ class VehicleSimNode(Node):
         self.last_time = self.get_clock().now()
 
         self.wheel_odom_pub = self.create_publisher(Odometry, "/wheel_odom", 10)
+        self.ground_truth_pub = (
+            self.create_publisher(Odometry, "/aris/sim/ground_truth", 10)
+            if self.publish_ground_truth
+            else None
+        )
         self.filtered_pub = (
             self.create_publisher(Odometry, "/odometry/filtered", 10)
             if self.publish_filtered_odom
@@ -82,6 +96,7 @@ class VehicleSimNode(Node):
         self.last_time = now
         velocity, steering = self._active_command(now)
         self.model.step(self.state, velocity, steering, dt)
+        self.distance_traveled_m += abs(self.state.velocity_mps) * dt
         self._publish(now)
 
     def _active_command(self, now) -> tuple[float, float]:
@@ -98,7 +113,8 @@ class VehicleSimNode(Node):
 
     def _publish(self, now) -> None:
         stamp = now.to_msg()
-        orientation = yaw_to_quaternion(self.state.yaw)
+        odom_x, odom_y, odom_yaw = self._drifted_odom_pose()
+        orientation = yaw_to_quaternion(odom_yaw)
         yaw_rate = (
             self.state.velocity_mps / self.wheelbase_m * math.tan(self.state.steering_rad)
         )
@@ -107,19 +123,30 @@ class VehicleSimNode(Node):
         odom.header.stamp = stamp
         odom.header.frame_id = "odom"
         odom.child_frame_id = "base_link"
-        odom.pose.pose.position.x = self.state.x
-        odom.pose.pose.position.y = self.state.y
+        odom.pose.pose.position.x = odom_x
+        odom.pose.pose.position.y = odom_y
         odom.pose.pose.orientation = orientation
         odom.twist.twist.linear.x = self.state.velocity_mps
         odom.twist.twist.angular.z = yaw_rate
         self.wheel_odom_pub.publish(odom)
 
+        if self.ground_truth_pub is not None:
+            truth = Odometry()
+            truth.header.stamp = stamp
+            truth.header.frame_id = "map"
+            truth.child_frame_id = "base_link"
+            truth.pose.pose.position.x = self.state.x
+            truth.pose.pose.position.y = self.state.y
+            truth.pose.pose.orientation = yaw_to_quaternion(self.state.yaw)
+            truth.twist.twist = odom.twist.twist
+            self.ground_truth_pub.publish(truth)
+
         tf = TransformStamped()
         tf.header.stamp = stamp
         tf.header.frame_id = "odom"
         tf.child_frame_id = "base_link"
-        tf.transform.translation.x = self.state.x
-        tf.transform.translation.y = self.state.y
+        tf.transform.translation.x = odom_x
+        tf.transform.translation.y = odom_y
         tf.transform.rotation = orientation
         self.tf_broadcaster.sendTransform(tf)
 
@@ -132,6 +159,16 @@ class VehicleSimNode(Node):
             filtered.pose.pose = odom.pose.pose
             filtered.twist.twist = odom.twist.twist
             self.filtered_pub.publish(filtered)
+
+    def _drifted_odom_pose(self) -> tuple[float, float, float]:
+        lateral_drift = self.distance_traveled_m * self.lateral_drift_per_m
+        yaw_drift = self.distance_traveled_m * self.yaw_drift_per_m
+        # Drift is expressed in the vehicle's local lateral axis, then mapped into odom.
+        odom_x = self.state.x - math.sin(self.state.yaw) * lateral_drift
+        odom_y = self.state.y + math.cos(self.state.yaw) * lateral_drift
+        odom_yaw = self.state.yaw + yaw_drift
+        odom_yaw = math.atan2(math.sin(odom_yaw), math.cos(odom_yaw))
+        return odom_x, odom_y, odom_yaw
 
 
 def main() -> None:

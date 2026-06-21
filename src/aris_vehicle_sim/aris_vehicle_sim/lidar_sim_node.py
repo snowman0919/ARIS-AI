@@ -40,6 +40,7 @@ class LidarSimNode(Node):
         self.declare_parameter("lidar_y_m", 0.0)
         self.declare_parameter("lidar_z_m", 0.9)
         self.declare_parameter("lidar_yaw_rad", 0.0)
+        self.declare_parameter("pose_topic", "/wheel_odom")
         self.declare_parameter("random_seed", 7)
 
         profile_file = str(self.get_parameter("profile_file").value).strip()
@@ -62,11 +63,12 @@ class LidarSimNode(Node):
         self.base_stamp = None
 
         self.cloud_pub = self.create_publisher(PointCloud2, "/scan_cloud", 10)
-        self.create_subscription(Odometry, "/wheel_odom", self._on_odom, 20)
+        pose_topic = str(self.get_parameter("pose_topic").value)
+        self.create_subscription(Odometry, pose_topic, self._on_odom, 20)
         self.create_timer(1.0 / max(self.profile.scan_rate_hz, 1e-6), self._publish_scan)
         self.get_logger().info(
             f"LiDAR sim up: {self.profile.model}, {len(self.profile.vertical_angles_deg)} rings, "
-            f"{self.profile.horizontal_samples} horizontal samples -> /scan_cloud"
+            f"{self.profile.horizontal_samples} horizontal samples, pose={pose_topic} -> /scan_cloud"
         )
 
     def _on_odom(self, msg: Odometry) -> None:

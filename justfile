@@ -65,6 +65,10 @@ lidar-sim-smoke:
 v2a-localization-smoke:
     ./scripts/check_v2a_localization.sh
 
+# V2A correction gate: injected wheel-odom drift must be recovered by LiDAR localization.
+v2a-drift-smoke:
+    ./scripts/check_v2a_drift_recovery.sh
+
 rviz:
     ./scripts/run_rviz.sh
 

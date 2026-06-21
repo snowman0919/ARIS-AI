@@ -40,3 +40,15 @@ surrogate, and starts `lidar_localization_node`, which publishes `/odometry/filt
 `map->odom`. In the current no-drift lightweight sim, the launch uses conservative correction
 windows while the ROS-free scan-matching core remains tested separately with an offset correction
 case.
+
+The drift-recovery gate exercises the same ownership path with intentionally corrupted wheel
+odometry:
+
+```bash
+nix develop -c just v2a-drift-smoke
+```
+
+That launch publishes ground truth only on `/aris/sim/ground_truth` for measurement and sensor
+simulation, injects lateral drift into `/wheel_odom` and `odom->base_link`, and requires
+LiDAR-owned `/odometry/filtered` to stay within 5 cm of ground truth while the wheel odometry
+drifts by at least 8 cm.
