@@ -81,6 +81,14 @@ v3-semantic-smoke:
 v4-goal-smoke:
     ./scripts/check_v4_goal_nav.sh
 
+# Interactive V4 demo, step 1: drive manually while recording a route CSV.
+v4-teach route="manual_v4_route.csv":
+    ./scripts/manual_v4_teach.sh "{{route}}"
+
+# Interactive V4 demo, step 2: follow the recorded route through V4 global planning.
+v4-follow route="manual_v4_route.csv":
+    ./scripts/manual_v4_follow.sh "{{route}}"
+
 rviz:
     ./scripts/run_rviz.sh
 

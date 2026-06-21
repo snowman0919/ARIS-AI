@@ -2,17 +2,24 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    route_file = LaunchConfiguration("route_file")
     description_launch = str(
         Path(get_package_share_directory("aris_description")) / "launch" / "description.launch.py"
     )
     return LaunchDescription(
         [
+            DeclareLaunchArgument(
+                "route_file",
+                default_value="",
+                description="Optional recorded V1 route CSV to convert into the V4 route graph.",
+            ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(description_launch),
                 launch_arguments={"use_sim": "true"}.items(),
@@ -58,6 +65,7 @@ def generate_launch_description():
                         "goal_x_m": 9.0,
                         "goal_y_m": 0.0,
                         "semantic_weight": 10.0,
+                        "route_file": route_file,
                     }
                 ],
             ),
