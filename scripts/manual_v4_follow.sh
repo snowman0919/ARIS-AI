@@ -31,5 +31,5 @@ aris_compose run --rm aris-ros2-dev bash -lc "
   set +u
   source install/setup.bash
   set -u
-  ros2 launch aris_planning v4_goal_nav_sim.launch.py route_file:='$route_container'
+  ros2 launch aris_planning v4_goal_nav_sim.launch.py route_file:='$route_container' use_demo_graph:=false
 "
