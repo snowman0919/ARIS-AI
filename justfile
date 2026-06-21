@@ -69,6 +69,10 @@ v2a-localization-smoke:
 v2a-drift-smoke:
     ./scripts/check_v2a_drift_recovery.sh
 
+# V2A route gate: V1 route following must work on localization-owned odometry under drift.
+v2a-route-smoke:
+    ./scripts/check_v2a_route_repeat.sh
+
 rviz:
     ./scripts/run_rviz.sh
 

@@ -52,3 +52,14 @@ That launch publishes ground truth only on `/aris/sim/ground_truth` for measurem
 simulation, injects lateral drift into `/wheel_odom` and `odom->base_link`, and requires
 LiDAR-owned `/odometry/filtered` to stay within 5 cm of ground truth while the wheel odometry
 drifts by at least 8 cm.
+
+The route-repeat gate adds `local_planner_node` back into that drift stack and verifies that V1
+route following still works from localization-owned odometry:
+
+```bash
+nix develop -c just v2a-route-smoke
+```
+
+It generates a bounded straight V1 route under `/aris/data/routes/`, follows it through the
+existing PurePursuit wrapper, and requires ground-truth lateral tracking under 0.3 m while the
+wheel odometry drifts by at least 8 cm and LiDAR localization stays within 5 cm.
