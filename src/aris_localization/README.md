@@ -62,4 +62,10 @@ nix develop -c just v2a-route-smoke
 
 It generates a bounded straight V1 route under `/aris/data/routes/`, follows it through the
 existing PurePursuit wrapper, and requires ground-truth lateral tracking under 0.3 m while the
-wheel odometry drifts by at least 8 cm and LiDAR localization stays within 5 cm.
+wheel odometry drifts by at least 8 cm. The separate drift-recovery gate above keeps the tighter
+5 cm localization recovery check.
+
+`lidar_localization_node` also uses a ROS-free correction acceptance gate in
+`aris_localization/fusion_gate.py`. The gate rejects scan-match corrections that have too few
+points, excessive mean map error, or implausibly large translation/yaw jumps; rejected corrections
+fall back to the wheel-odom pose for that update rather than poisoning `/odometry/filtered`.

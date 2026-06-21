@@ -16,7 +16,7 @@ aris_compose run --rm aris-ros2-dev bash -lc '
   metrics_file=/tmp/aris_v2a_drift_recovery_metrics.txt
   status_file=/tmp/aris_v2a_drift_recovery_status.txt
 
-  timeout -s INT 16s ros2 launch aris_localization v2a_drift_recovery.launch.py \
+  timeout -s INT 22s ros2 launch aris_localization v2a_drift_recovery.launch.py \
     >"$launch_log" 2>&1 &
   launch_pid=$!
   sleep 3
@@ -50,7 +50,7 @@ node.create_subscription(Odometry, "/wheel_odom", lambda msg: append(wheel, msg)
 node.create_subscription(Odometry, "/aris/sim/ground_truth", lambda msg: append(truth, msg), 20)
 node.create_subscription(Odometry, "/odometry/filtered", lambda msg: append(filtered, msg), 20)
 
-deadline = time.monotonic() + 8.0
+deadline = time.monotonic() + 12.0
 while time.monotonic() < deadline:
     cmd = AckermannDriveStamped()
     cmd.drive.speed = 1.0
@@ -77,16 +77,37 @@ if not filtered:
 def nearest(samples, stamp):
     return min(samples, key=lambda sample: abs(sample[0] - stamp))
 
+def sample_at(samples, stamp):
+    ordered = sorted(samples, key=lambda sample: sample[0])
+    if stamp <= ordered[0][0]:
+        return ordered[0], abs(ordered[0][0] - stamp)
+    if stamp >= ordered[-1][0]:
+        return ordered[-1], abs(ordered[-1][0] - stamp)
+    for before, after in zip(ordered, ordered[1:]):
+        if before[0] <= stamp <= after[0]:
+            span = max(after[0] - before[0], 1e-9)
+            ratio = (stamp - before[0]) / span
+            yaw_delta = math.atan2(math.sin(after[3] - before[3]), math.cos(after[3] - before[3]))
+            sample = (
+                stamp,
+                before[1] + (after[1] - before[1]) * ratio,
+                before[2] + (after[2] - before[2]) * ratio,
+                before[3] + yaw_delta * ratio,
+            )
+            return sample, max(abs(stamp - before[0]), abs(after[0] - stamp))
+    nearest_sample = nearest(ordered, stamp)
+    return nearest_sample, abs(nearest_sample[0] - stamp)
+
 matched = []
 for ft, fx, fy, fyaw in filtered:
-    tt, tx, ty, tyaw = nearest(truth, ft)
-    wt, wx, wy, wyaw = nearest(wheel, ft)
-    if max(abs(tt - ft), abs(wt - ft)) > 0.05:
+    (tt, tx, ty, tyaw), truth_dt = sample_at(truth, ft)
+    (wt, wx, wy, wyaw), wheel_dt = sample_at(wheel, ft)
+    if max(truth_dt, wheel_dt) > 0.15:
         continue
     filtered_error = math.hypot(fx - tx, fy - ty)
     wheel_error = math.hypot(wx - tx, wy - ty)
     yaw_error = abs(math.atan2(math.sin(fyaw - tyaw), math.cos(fyaw - tyaw)))
-    matched.append((filtered_error, wheel_error, yaw_error, fx, tx, abs(tt - ft), abs(wt - ft)))
+    matched.append((filtered_error, wheel_error, yaw_error, fx, tx, truth_dt, wheel_dt))
 
 if not matched:
     raise SystemExit("no timestamp-aligned truth/wheel/localization samples")

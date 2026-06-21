@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from aris_localization.fusion_gate import CorrectionGateConfig, evaluate_lidar_correction
 from aris_localization.localization_core import (
     Pose2D,
     Transform2D,
@@ -14,6 +15,7 @@ from aris_localization.scan_matching import (
     BoxMapObject,
     LidarExtrinsic2D,
     ScanMatchConfig,
+    ScanMatchResult,
     match_scan_to_map,
     scan_map_mean_error,
 )
@@ -109,3 +111,54 @@ def test_known_map_scan_matching_corrects_lateral_and_yaw_error():
     assert result.pose.y == pytest.approx(0.0, abs=0.04)
     assert result.pose.yaw == pytest.approx(0.0, abs=0.03)
     assert result.mean_error_m < scan_map_mean_error(points, odom_guess, known_map, extrinsic, 1.0)
+
+
+def test_correction_gate_accepts_bounded_lidar_correction():
+    odom = Pose2D(x=1.0, y=0.10, yaw=0.02)
+    result = ScanMatchResult(
+        pose=Pose2D(x=1.0, y=0.0, yaw=0.0),
+        mean_error_m=0.03,
+        used_points=120,
+    )
+
+    decision = evaluate_lidar_correction(odom, result)
+
+    assert decision.accepted
+    assert decision.pose == result.pose
+    assert decision.translation_delta_m == pytest.approx(0.10)
+
+
+def test_correction_gate_rejects_large_or_low_quality_corrections():
+    odom = Pose2D(x=1.0, y=0.0, yaw=0.0)
+    config = CorrectionGateConfig(
+        max_translation_m=0.5,
+        max_yaw_rad=0.2,
+        max_mean_error_m=0.2,
+        min_used_points=20,
+    )
+
+    large_jump = evaluate_lidar_correction(
+        odom,
+        ScanMatchResult(Pose2D(x=1.8, y=0.0, yaw=0.0), mean_error_m=0.05, used_points=100),
+        config,
+    )
+    noisy_scan = evaluate_lidar_correction(
+        odom,
+        ScanMatchResult(Pose2D(x=1.1, y=0.0, yaw=0.0), mean_error_m=0.4, used_points=100),
+        config,
+    )
+    sparse_scan = evaluate_lidar_correction(
+        odom,
+        ScanMatchResult(Pose2D(x=1.1, y=0.0, yaw=0.0), mean_error_m=0.05, used_points=4),
+        config,
+    )
+
+    assert not large_jump.accepted
+    assert large_jump.reason == "translation_jump_too_large"
+    assert large_jump.pose == odom
+    assert not noisy_scan.accepted
+    assert noisy_scan.reason == "scan_error_too_high"
+    assert noisy_scan.pose == odom
+    assert not sparse_scan.accepted
+    assert sparse_scan.reason == "too_few_points"
+    assert sparse_scan.pose == odom

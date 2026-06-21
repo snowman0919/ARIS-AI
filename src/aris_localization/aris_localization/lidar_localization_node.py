@@ -18,6 +18,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import PointCloud2
 from tf2_ros import TransformBroadcaster
 
+from .fusion_gate import CorrectionGateConfig, evaluate_lidar_correction
 from .localization_core import Pose2D, map_to_odom_from_base_poses
 from .scan_matching import (
     LidarExtrinsic2D,
@@ -56,6 +57,10 @@ class LidarLocalizationNode(Node):
         self.declare_parameter("max_points", 240)
         self.declare_parameter("prior_weight", 5.0)
         self.declare_parameter("min_improvement_m", 0.05)
+        self.declare_parameter("correction_max_translation_m", 0.50)
+        self.declare_parameter("correction_max_yaw_rad", 0.25)
+        self.declare_parameter("correction_max_mean_error_m", 0.35)
+        self.declare_parameter("correction_min_used_points", 10)
 
         map_file = str(self.get_parameter("map_file").value)
         self.known_map = load_box_map(map_file)
@@ -73,7 +78,14 @@ class LidarLocalizationNode(Node):
             prior_weight=float(self.get_parameter("prior_weight").value),
             min_improvement_m=float(self.get_parameter("min_improvement_m").value),
         )
+        self.gate_config = CorrectionGateConfig(
+            max_translation_m=float(self.get_parameter("correction_max_translation_m").value),
+            max_yaw_rad=float(self.get_parameter("correction_max_yaw_rad").value),
+            max_mean_error_m=float(self.get_parameter("correction_max_mean_error_m").value),
+            min_used_points=int(self.get_parameter("correction_min_used_points").value),
+        )
         self.odom_history: list[Odometry] = []
+        self.last_rejection_reason = ""
 
         self.filtered_pub = self.create_publisher(Odometry, "/odometry/filtered", 10)
         self.tf_broadcaster = TransformBroadcaster(self)
@@ -102,9 +114,18 @@ class LidarLocalizationNode(Node):
         result = match_scan_to_map(
             points, odom_pose, self.known_map, self.lidar_extrinsic, self.match_config
         )
+        decision = evaluate_lidar_correction(odom_pose, result, self.gate_config)
+        if not decision.accepted and decision.reason != self.last_rejection_reason:
+            self.get_logger().warn(
+                "Rejected LiDAR correction: "
+                f"{decision.reason}, delta={decision.translation_delta_m:.3f}m, "
+                f"dyaw={decision.yaw_delta_rad:.3f}rad, score={result.mean_error_m:.3f}, "
+                f"points={result.used_points}"
+            )
+            self.last_rejection_reason = decision.reason
         stamp = msg.header.stamp
-        self._publish_filtered(stamp, result.pose, odom_msg)
-        self._publish_map_to_odom(stamp, result.pose, odom_pose)
+        self._publish_filtered(stamp, decision.pose, odom_msg)
+        self._publish_map_to_odom(stamp, decision.pose, odom_pose)
 
     def _odom_for_stamp(self, stamp) -> Odometry | None:
         if not self.odom_history:
