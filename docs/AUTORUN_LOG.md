@@ -231,3 +231,35 @@ Entry format:
 - Exact next step: either repair the Gazebo `/scan_cloud` path for full V2, or begin a
   simulation-only V3 perception scaffold that subscribes to `/scan_cloud` and is documented as WIP
   until full V2 sensor/localization validation exists.
+
+## 2026-06-21 18:30 KST — V3: Semantic HD Map Pure-Core Scaffold — WIP/BLOCKED
+- Built:        Added buildable `aris_mapping` and `aris_perception` packages. `aris_mapping`
+  contains a ROS-free five-layer semantic HD map core: metric cells, occupancy, semantic labels,
+  traversability cost, and route-graph nodes/edges, with repeat-pass confidence and change
+  detection policy. `aris_perception` contains a ROS-free simulation-only segmentation projection
+  helper that converts a detection plus camera intrinsics/extrinsics/vehicle pose into a semantic
+  map observation.
+- Verified:     Unit tests cover semantic layer updates, low-confidence review, repeat-pass change
+  detection, route graph blocked-edge filtering, traversability risk ordering, and projection of
+  simulated camera detections into map observations.
+- Build/tests:  `nix develop -c just ros2-build` green (10 packages; setuptools warnings only);
+  `python3 -m pytest src -q` green (`44 passed`); `nix develop -c just auto-sim` green.
+- Commit:       `8049f34` — `V3: scaffold semantic map cores`.
+- Stubbed/blocked: V3 is not complete. No camera topics, no segmentation model, no ROS perception
+  node, no projection from real image masks, and no repeat-pass dataset exist yet. This is a
+  clearly labelled simulation-only pure-core scaffold, created because the V3 external assets are
+  unavailable and full V2 Gazebo/real LiDAR validation is still WIP.
+- Next:         Stop forward V3 completion claims here unless the owner provides/approves camera
+  streams and a segmentation model. Safe next work is either Gazebo gpu_lidar repair for full V2 or
+  a small simulation-only V4 route-graph planner scaffold using the new `aris_mapping` route graph.
+
+## 2026-06-21 18:30 KST — SUMMARY
+- Truly passed: V1 teach-and-repeat; V2A LiDAR surrogate/localization/drift/route/correction-gate
+  verification; V3 pure-core map/perception scaffold tests.
+- WIP/blocked: Full V2 remains incomplete because Gazebo gpu_lidar has no verified `/scan_cloud`
+  and production SLAM/NDT/EKF/real LiDAR validation are not done. V3 completion is blocked by the
+  missing camera streams, segmentation model, and real repeat-pass dataset.
+- Current build/test state: `nix develop -c just ros2-build` green for 10 packages; unit suite
+  green (`44 passed`); `just auto-sim` green after adding `aris_mapping` and `aris_perception`.
+- Exact next step: choose one of two honest paths: repair full V2 Gazebo/real sensor localization,
+  or continue only with explicitly labelled simulation scaffolds such as V4 route-graph planning.
