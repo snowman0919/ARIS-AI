@@ -17,4 +17,9 @@ setup(
     description="Simulation-only perception scaffolds for ARIS V3.",
     license="Apache-2.0",
     tests_require=["pytest"],
+    entry_points={
+        "console_scripts": [
+            "simulated_segmentation_node = aris_perception.simulated_segmentation_node:main",
+        ],
+    },
 )
