@@ -381,16 +381,20 @@ Entry format:
   `./scripts/check_v2_gazebo_localization.sh` green: `cloud_width=10240`,
   `filtered=(0.000,0.000,0.000)`, `map_to_odom=(0.000,0.000)`.
   `./scripts/check_v2_gazebo_moving_localization.sh` green: `cloud_width=10240`,
-  `filtered_last=(1.623,0.000)`, `delta_x=1.623`,
-  `front_range_delta=2.273 (4.249->1.976)`, `gazebo_aris_pose_x=2.274`.
+  `filtered_last=(2.241,0.000)`, `delta_x=2.241`,
+  `front_range_delta=1.836 (2.255->0.418)`, `gazebo_aris_pose_x=3.828`.
+  `./scripts/check_v2_gazebo_drift_recovery.sh` green:
+  `max_wheel_error=0.109`, `max_filtered_error=0.024`,
+  `final_wheel_error=0.109`, `final_filtered_error=0.008`.
 - Build/tests:  `./scripts/check_python_tests.sh` green (`67 passed`);
   `./scripts/check_scan_cloud_contract.sh` green for the deterministic LiDAR surrogate
   (`frame=lidar_link`, `width=868`, `point_step=24`, TF `(0.600,0.000,0.900)`).
 - Commit:       not committed in this run.
 - Stubbed/blocked: Full V2 is still not production complete. This repairs the Gazebo sensor
-  smoke path and pose-synced moving localization data flow, but Gazebo physics is not yet the
-  motion authority. It still does not add real Unitree driver validation, recorded data, SLAM map
-  generation, production NDT/EKF selection, or hardware-in-the-loop localization acceptance.
+  smoke path, pose-synced moving localization data flow, and Gazebo gpu_lidar drift recovery, but
+  Gazebo physics is not yet the motion authority. It still does not add real Unitree driver
+  validation, recorded data, SLAM map generation, production NDT/EKF selection, or
+  hardware-in-the-loop localization acceptance.
 - Next:         Replace pose-sync scaffolding with a Gazebo physics/vehicle-control path or keep
   pose sync as the sim bridge while adding recorded/real LiDAR validation and a production
   NDT/EKF design.

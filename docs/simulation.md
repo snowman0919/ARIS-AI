@@ -46,6 +46,7 @@ Headless Gazebo LiDAR smoke:
 just v2-lidar-smoke
 just v2-gazebo-localization-smoke
 just v2-gazebo-moving-smoke
+just v2-gazebo-drift-smoke
 ```
 
 This launches `ros_gz`, spawns the shared ARIS URDF, bridges the Gazebo `gpu_lidar` raw
@@ -62,6 +63,11 @@ the Gazebo ARIS entity through `/world/aris_lidar_smoke/set_pose`. The smoke pub
 and checks localization movement, Gazebo entity movement, and a shrinking forward LiDAR range as
 the vehicle approaches the smoke target. It is still a V2 integration scaffold; Gazebo physics is
 not yet the motion authority.
+
+`just v2-gazebo-drift-smoke` syncs the Gazebo entity from ground truth while feeding intentionally
+drifted `/wheel_odom` to localization. It verifies that Gazebo gpu_lidar observations reduce the
+wheel-odom lateral error. Gazebo cloud stamps are normalized to ROS receive time in this launch so
+LiDAR, wheel odom, and ground-truth samples share a comparable time base.
 
 The deterministic software LiDAR surrogate remains available for algorithm development and CI-like
 checks that do not need Gazebo rendering:

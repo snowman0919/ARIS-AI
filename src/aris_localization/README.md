@@ -44,6 +44,15 @@ the Gazebo gpu_lidar -> `/scan_cloud` -> localization path alive. The smoke also
 front LiDAR range shrinks as the vehicle approaches the Gazebo target. Gazebo physics is not yet
 the motion authority.
 
+The Gazebo drift-recovery smoke uses the same gpu_lidar path as a correction source:
+
+```bash
+nix develop -c just v2-gazebo-drift-smoke
+```
+
+It synchronizes Gazebo from `/aris/sim/ground_truth`, injects lateral drift into `/wheel_odom`, and
+requires `/odometry/filtered` to reduce that drift using Gazebo `/scan_cloud` observations.
+
 This is still a V2 scaffold, not production localization. Full V2 still needs real Unitree profile
 values, recorded LiDAR data, map generation, NDT/EKF selection, and hardware validation.
 

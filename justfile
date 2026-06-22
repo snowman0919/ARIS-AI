@@ -68,6 +68,10 @@ v2-gazebo-localization-smoke:
 v2-gazebo-moving-smoke:
     ./scripts/check_v2_gazebo_moving_localization.sh
 
+# V2 probe: drifted wheel odom must be corrected by Gazebo gpu_lidar observations.
+v2-gazebo-drift-smoke:
+    ./scripts/check_v2_gazebo_drift_recovery.sh
+
 # V2 algorithm-development sensor surrogate: spec-driven 3D LiDAR sim -> /scan_cloud.
 lidar-sim-smoke:
     ./scripts/check_lidar_sim.sh
