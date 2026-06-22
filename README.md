@@ -27,6 +27,7 @@ directly:
 ./scripts/check_v2_gazebo_localization.sh
 ./scripts/check_v2_gazebo_moving_localization.sh
 ./scripts/check_v2_gazebo_drift_recovery.sh
+./scripts/check_v2_gazebo_stack.sh
 ./scripts/check_lidar_sim.sh
 ./scripts/check_scan_cloud_contract.sh
 ./scripts/check_operator_goal.sh
@@ -146,6 +147,7 @@ just v2-lidar-smoke  # Gazebo gpu_lidar -> normalized /scan_cloud smoke
 just v2-gazebo-localization-smoke # Gazebo /scan_cloud -> localization smoke
 just v2-gazebo-moving-smoke # moving sim pose -> Gazebo entity -> localization smoke
 just v2-gazebo-drift-smoke # Gazebo gpu_lidar corrects drifted wheel odom
+just v2-gazebo-stack-smoke # run all headless Gazebo V2 checks
 just scan-cloud-contract # validate /scan_cloud PointCloud2 fields, frame, and TF
 just operator-goal-smoke # operator JSON goal -> /goal_pose -> V4 planner smoke
 just firmware-test   # Rust STM32 safety-core tests and thumbv7em-none-eabihf build

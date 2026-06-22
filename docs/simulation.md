@@ -47,6 +47,7 @@ just v2-lidar-smoke
 just v2-gazebo-localization-smoke
 just v2-gazebo-moving-smoke
 just v2-gazebo-drift-smoke
+just v2-gazebo-stack-smoke
 ```
 
 This launches `ros_gz`, spawns the shared ARIS URDF, bridges the Gazebo `gpu_lidar` raw
@@ -68,6 +69,9 @@ not yet the motion authority.
 drifted `/wheel_odom` to localization. It verifies that Gazebo gpu_lidar observations reduce the
 wheel-odom lateral error. Gazebo cloud stamps are normalized to ROS receive time in this launch so
 LiDAR, wheel odom, and ground-truth samples share a comparable time base.
+
+`just v2-gazebo-stack-smoke` runs the complete headless Gazebo V2 sequence: cloud contract,
+static localization, moving pose sync, and drift recovery.
 
 The deterministic software LiDAR surrogate remains available for algorithm development and CI-like
 checks that do not need Gazebo rendering:

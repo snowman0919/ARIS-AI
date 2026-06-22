@@ -386,6 +386,7 @@ Entry format:
   `./scripts/check_v2_gazebo_drift_recovery.sh` green:
   `max_wheel_error=0.109`, `max_filtered_error=0.024`,
   `final_wheel_error=0.109`, `final_filtered_error=0.008`.
+  `./scripts/check_v2_gazebo_stack.sh` green: all 4 headless Gazebo V2 checks passed.
 - Build/tests:  `./scripts/check_python_tests.sh` green (`67 passed`);
   `./scripts/check_scan_cloud_contract.sh` green for the deterministic LiDAR surrogate
   (`frame=lidar_link`, `width=868`, `point_step=24`, TF `(0.600,0.000,0.900)`).

@@ -72,6 +72,10 @@ v2-gazebo-moving-smoke:
 v2-gazebo-drift-smoke:
     ./scripts/check_v2_gazebo_drift_recovery.sh
 
+# V2 aggregate: run all headless Gazebo gpu_lidar localization smokes.
+v2-gazebo-stack-smoke:
+    ./scripts/check_v2_gazebo_stack.sh
+
 # V2 algorithm-development sensor surrogate: spec-driven 3D LiDAR sim -> /scan_cloud.
 lidar-sim-smoke:
     ./scripts/check_lidar_sim.sh
