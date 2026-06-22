@@ -401,3 +401,18 @@ Entry format:
 - Next:         Replace pose-sync scaffolding with a Gazebo physics/vehicle-control path or keep
   pose sync as the sim bridge while adding recorded/real LiDAR validation and a production
   NDT/EKF design.
+
+## 2026-06-22 10:29 KST — Core Readiness Evidence Report Wrapper — WIP
+- Built:        Added `./scripts/run_core_readiness_report.sh` and `just core-readiness-report` so
+  the headless readiness gate writes timestamped acceptance evidence under
+  `$ARIS_LOGS/readiness/`, with `latest.log` pointing to the newest run.
+- Verified:     `ARIS_CORE_READINESS_SKIP_GAZEBO=1 ./scripts/run_core_readiness_report.sh` green
+  after the full Gazebo-inclusive `./scripts/check_core_readiness.sh` run above. The report was
+  written to `/home/kotori9/aris/logs/readiness/core_readiness_20260622T012826Z.log`; tail status
+  recorded `result=PASS` and `exit_code=0`.
+- Commit:       not committed in this run.
+- Stubbed/blocked: The wrapper preserves evidence, but a skip-Gazebo report is weaker than a full
+  readiness report. Full production readiness remains blocked by real Unitree driver validation,
+  recorded/real LiDAR acceptance, production map generation, and hardware-in-the-loop gates.
+- Next:         Run `just core-readiness-report` without `ARIS_CORE_READINESS_SKIP_GAZEBO=1` on
+  every release candidate so the timestamped artifact includes all six readiness checks.

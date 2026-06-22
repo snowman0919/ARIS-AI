@@ -23,6 +23,7 @@ directly:
 ```bash
 ./scripts/check_host.sh
 ./scripts/check_core_readiness.sh
+./scripts/run_core_readiness_report.sh
 ./scripts/check_python_tests.sh
 ./scripts/check_v2_gazebo_lidar.sh
 ./scripts/check_v2_gazebo_localization.sh
@@ -138,6 +139,7 @@ ARIS_BUILD_AI=1 just docker-build
 ```bash
 just check-host      # host tools, Docker access, architecture, ARIS paths
 just core-readiness  # headless software readiness gate, including Gazebo by default
+just core-readiness-report # core-readiness with timestamped log under ARIS_LOGS
 just gpu-test        # CUDA/GPU visibility inside a container
 just ros2-test       # ROS2 CLI and demo pub/sub inside container
 just python-test     # ROS-free Python unit tests on the host

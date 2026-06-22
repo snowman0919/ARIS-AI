@@ -109,3 +109,12 @@ just core-readiness
 It runs unit, MCU protocol loopback, `/scan_cloud` contract, operator goal, V4 goal navigation, and
 V2 Gazebo stack smokes. Set `ARIS_CORE_READINESS_SKIP_GAZEBO=1` only when the environment cannot
 run headless Gazebo; that skip weakens the evidence and must be recorded in the run log.
+
+To store timestamped evidence:
+
+```bash
+just core-readiness-report
+```
+
+Reports are written to `$ARIS_LOGS/readiness/core_readiness_<timestamp>.log`, with
+`$ARIS_LOGS/readiness/latest.log` pointing at the most recent run.

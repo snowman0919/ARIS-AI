@@ -6,6 +6,9 @@ check-host:
 core-readiness:
     ./scripts/check_core_readiness.sh
 
+core-readiness-report:
+    ./scripts/run_core_readiness_report.sh
+
 nix-shell-info:
     @printf 'ARIS_WS=%s\nARIS_HOME=%s\nARIS_DATA=%s\nARIS_LOGS=%s\nARIS_MODELS=%s\nROS_DOMAIN_ID=%s\nROS_LOCALHOST_ONLY=%s\n' "$ARIS_WS" "$ARIS_HOME" "$ARIS_DATA" "$ARIS_LOGS" "$ARIS_MODELS" "$ROS_DOMAIN_ID" "$ROS_LOCALHOST_ONLY"
 
