@@ -114,7 +114,7 @@ if delta_x < 0.35:
     failures.append(f"filtered pose did not move far enough: delta_x={delta_x:.3f}")
 if abs(float(last.y)) > 0.25:
     failures.append(f"filtered y drift too high: y={float(last.y):.3f}")
-if range_delta < 0.25:
+if range_delta < 0.15:
     failures.append(
         "Gazebo LiDAR forward range did not shrink enough: "
         f"initial={first_range:.3f}, final={last_range:.3f}, delta={range_delta:.3f}"

@@ -416,3 +416,24 @@ Entry format:
   recorded/real LiDAR acceptance, production map generation, and hardware-in-the-loop gates.
 - Next:         Run `just core-readiness-report` without `ARIS_CORE_READINESS_SKIP_GAZEBO=1` on
   every release candidate so the timestamped artifact includes all six readiness checks.
+
+## 2026-06-22 10:51 KST — V2: Gazebo Ackermann Physics Motion Gate — WIP
+- Built:        Added simulation-only wheel links, wheel joints, and Gazebo's Ackermann steering
+  system to the shared ARIS URDF when `use_sim:=true`. Added
+  `aris_vehicle_sim.gazebo_cmd_drive_bridge_node` so the stack keeps publishing `/cmd_drive` while
+  Gazebo receives `/cmd_vel` through `ros_gz_bridge`. Added
+  `v2_gazebo_physics.launch.py`, `just v2-gazebo-physics-smoke`, and
+  `./scripts/check_v2_gazebo_physics.sh`.
+- Verified:     `./scripts/check_v2_gazebo_physics.sh` green:
+  `odom_samples=50`, `cloud_samples=79`, `delta_x=1.645`, `gazebo_aris_pose_x=1.645`.
+  `./scripts/check_v2_gazebo_stack.sh` green with 5 checks; physics subcheck reported
+  `delta_x=3.552`, `gazebo_aris_pose_x=3.410`. `./scripts/check_core_readiness.sh` green:
+  all 6 top-level readiness checks passed. `./scripts/run_core_readiness_report.sh` green without
+  Gazebo skip and wrote
+  `/home/kotori9/aris/logs/readiness/core_readiness_20260622T015140Z.log` with `result=PASS`.
+- Commit:       Included with the Gazebo physics motion gate change.
+- Stubbed/blocked: This proves Gazebo can be the motion authority for a straight-line smoke, but
+  it is not yet the default localization authority path and does not replace recorded/real LiDAR,
+  SLAM map generation, calibrated NDT/EKF settings, Unitree driver validation, or HIL acceptance.
+- Next:         Use the physics motion launch as the basis for a localization smoke that consumes
+  Gazebo `/gazebo/odom` or physics-derived wheel odometry instead of pose-sync scaffolding.

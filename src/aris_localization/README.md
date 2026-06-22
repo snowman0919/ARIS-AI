@@ -44,6 +44,16 @@ the Gazebo gpu_lidar -> `/scan_cloud` -> localization path alive. The smoke also
 front LiDAR range shrinks as the vehicle approaches the Gazebo target. Gazebo physics is not yet
 the motion authority.
 
+The Gazebo physics smoke removes pose sync from the motion path:
+
+```bash
+nix develop -c just v2-gazebo-physics-smoke
+```
+
+It sends `/cmd_drive` through the simulation HAL bridge into Gazebo's Ackermann steering plugin,
+then requires `/gazebo/odom`, Gazebo `/pose/info`, and `/scan_cloud` to stay live. This is a
+physics-motion gate, not a full localization acceptance test yet.
+
 The Gazebo drift-recovery smoke uses the same gpu_lidar path as a correction source:
 
 ```bash

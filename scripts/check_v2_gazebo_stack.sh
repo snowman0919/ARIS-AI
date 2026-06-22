@@ -10,6 +10,7 @@ checks=(
   "check_v2_gazebo_lidar.sh"
   "check_v2_gazebo_localization.sh"
   "check_v2_gazebo_moving_localization.sh"
+  "check_v2_gazebo_physics.sh"
   "check_v2_gazebo_drift_recovery.sh"
 )
 

@@ -74,6 +74,10 @@ v2-gazebo-localization-smoke:
 v2-gazebo-moving-smoke:
     ./scripts/check_v2_gazebo_moving_localization.sh
 
+# V2 probe: /cmd_drive moves the Gazebo URDF through its Ackermann physics plugin.
+v2-gazebo-physics-smoke:
+    ./scripts/check_v2_gazebo_physics.sh
+
 # V2 probe: drifted wheel odom must be corrected by Gazebo gpu_lidar observations.
 v2-gazebo-drift-smoke:
     ./scripts/check_v2_gazebo_drift_recovery.sh
