@@ -1,0 +1,51 @@
+services:
+  ai-jupyter:
+    image: ${DGX_PYTORCH_IMAGE:-nvcr.io/nvidia/pytorch:26.04-py3}
+    gpus: all
+    ipc: host
+    shm_size: 16gb
+    ports:
+      - "${JUPYTER_PORT:-8888}:8888"
+    volumes:
+      - ./workspaces:/workspace/dgx:rw
+      - ./notebooks:/workspace/notebooks:rw
+      - ./models:/models:rw
+      - ./data:/data:rw
+    working_dir: /workspace/dgx
+    command: >
+      bash -lc "jupyter lab --ip=0.0.0.0 --port=8888 --no-browser
+      --allow-root --ServerApp.token=${JUPYTER_TOKEN:-dgx-spark}"
+    profiles: ["ai"]
+
+  isaac-sim-compat:
+    image: ${ISAAC_SIM_IMAGE:-nvcr.io/nvidia/isaac-sim:5.1.0}
+    gpus: all
+    network_mode: host
+    user: "1234:1234"
+    environment:
+      ACCEPT_EULA: "Y"
+      PRIVACY_CONSENT: "N"
+    volumes:
+      - ./docker/isaac-sim/cache/main:/isaac-sim/.cache:rw
+      - ./docker/isaac-sim/cache/computecache:/isaac-sim/.nv/ComputeCache:rw
+      - ./docker/isaac-sim/logs:/isaac-sim/.nvidia-omniverse/logs:rw
+      - ./docker/isaac-sim/config:/isaac-sim/.nvidia-omniverse/config:rw
+      - ./docker/isaac-sim/data:/isaac-sim/.local/share/ov/data:rw
+      - ./docker/isaac-sim/pkg:/isaac-sim/.local/share/ov/pkg:rw
+    entrypoint: bash
+    command: -lc "./isaac-sim.compatibility_check.sh --/app/quitAfter=10 --no-window"
+    profiles: ["sim"]
+
+  ros-jazzy:
+    image: ${ROS_IMAGE:-ros:jazzy-ros-base-noble}
+    network_mode: host
+    environment:
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+      RMW_IMPLEMENTATION: "${RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}"
+    volumes:
+      - ./workspaces/ros2_ws:/ros2_ws:rw
+    working_dir: /ros2_ws
+    command: bash
+    stdin_open: true
+    tty: true
+    profiles: ["ros"]
